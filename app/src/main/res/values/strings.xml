@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Calculadora</string>
+    <string name="app_name">CALCULATOR FOR DAM</string>
     <string name="str_result">0</string>
     <string name="str_btn_add">+</string>
     <string name="str_btn_diff">-</string>

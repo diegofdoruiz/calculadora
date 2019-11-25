@@ -2,13 +2,20 @@ package com.example.calculadora;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import java.text.DecimalFormat;
+import androidx.appcompat.widget.Toolbar;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private String input;
     private Boolean equal;
 
+    private Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +43,10 @@ public class MainActivity extends AppCompatActivity {
         this.result = 0.0;
         this.memory = 0.0;
         this.equal = false;
+
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        toolbar.setTitleTextColor(getResources().getColor(android.R.color.white));
         //Struct final_struct = this.processString("1000");
 
         //(3+4)1+(2+3)+3+1(9+23)x4-6+2-4
@@ -51,6 +63,40 @@ public class MainActivity extends AppCompatActivity {
 
         Log.i("res", Double.toString(tttt.calculate(final_struct)));*/
 
+    }
+
+    public boolean onCreateOptionsMenu(Menu menu){
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem menu_item){
+        Toast.makeText(this,"Has shared result", Toast.LENGTH_LONG).show();
+
+
+        PackageManager pm = getPackageManager();
+        try {
+
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            String text = "Aplicación: Calculadora V 1.0 \n";
+            text += "Author: Diego Fernando Ruiz \n";
+            text += "Resultado de la operación: ";
+            text += Double.toString(this.result);
+
+            PackageInfo info=pm.getPackageInfo("com.whatsapp", PackageManager.GET_META_DATA);
+            //Check if package exists or not. If not then code
+            //in catch block will be called
+            intent.setPackage("com.whatsapp");
+
+            intent.putExtra(Intent.EXTRA_TEXT, text);
+            startActivity(Intent.createChooser(intent, "Share with"));
+        } catch (PackageManager.NameNotFoundException e) {
+            Toast.makeText(this, "WhatsApp not Installed", Toast.LENGTH_SHORT)
+                    .show();
+        }
+
+        return true;
     }
 
     public void onClick(View view) {
