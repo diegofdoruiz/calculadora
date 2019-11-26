@@ -1,3 +1,28 @@
 <resources>
-    <string name="app_name">Calculadora</string>
+    <string name="app_name">CALCULATOR FOR DAM</string>
+    <string name="str_result">0</string>
+    <string name="str_btn_add">+</string>
+    <string name="str_btn_diff">-</string>
+    <string name="str_btn_product">x</string>
+    <string name="str_btn_quotient">÷</string>
+    <string name="str_btn_equal">=</string>
+    <string name="str_btn_m_pop">MR</string>
+    <string name="str_btn_parenthesis_l">(</string>
+    <string name="str_btn_parenthesis_r">)</string>
+    <string name="str_btn_return">⌫</string>
+    <string name="str_btn_delete">C</string>
+    <string name="str_btn_sqrt">√</string>
+    <string name="str_btn_pow">^</string>
+    <string name="str_btn_1">1</string>
+    <string name="str_btn_2">2</string>
+    <string name="str_btn_3">3</string>
+    <string name="str_btn_4">4</string>
+    <string name="str_btn_5">5</string>
+    <string name="str_btn_6">6</string>
+    <string name="str_btn_7">7</string>
+    <string name="str_btn_8">8</string>
+    <string name="str_btn_9">9</string>
+    <string name="str_btn_m_push">MS</string>
+    <string name="str_btn_0">0</string>
+    <string name="str_btn_coma">.</string>
 </resources>
