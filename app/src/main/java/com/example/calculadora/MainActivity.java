@@ -23,7 +23,6 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     //global vars
     private TextView screen_result, screen_input;
-    private Boolean parenthesis_error = true;
     private String signs = "+-x÷^√";
     private Double memory;
     private Double result;
@@ -44,32 +43,50 @@ public class MainActivity extends AppCompatActivity {
         this.memory = 0.0;
         this.equal = false;
 
+        if(savedInstanceState != null){
+            this.input = savedInstanceState.getString("input");
+            this.result = savedInstanceState.getDouble("result");
+            this.memory = savedInstanceState.getDouble("memory");
+            this.equal = savedInstanceState.getBoolean("equal");
+            String str_show = this.formatNumberString(this.result);
+            screen_result.setText(str_show);
+            screen_input.setText(this.input);
+            this.solveInput(this.input);
+        }
+
+        //personalized menu bar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setTitleTextColor(getResources().getColor(android.R.color.white));
-        //Struct final_struct = this.processString("1000");
-
-        //(3+4)1+(2+3)+3+1(9+23)x4-6+2-4
-        //1÷(1÷3)÷3x34÷(3+4x3)÷3
-        //1x(3+5(7+8))9x6
-
-        /*Struct final_struct = this.processParentheses("+");
-
-        Struct tttt = new Struct(null, null, null, null, null);
-        String algo = tttt.structToString(final_struct);
-
-        String TAG = "Recursion: ";
-        Log.i(TAG, algo);
-
-        Log.i("res", Double.toString(tttt.calculate(final_struct)));*/
-
     }
 
+    // save prev state on destroy
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("input", this.input);
+        outState.putDouble("result", this.result);
+        outState.putDouble("memory", this.memory);
+        outState.putBoolean("equal", this.equal);
+    }
+
+    // on stop calculate again
+    @Override
+    public void onStop(){
+        super.onStop();
+        String str_show = this.formatNumberString(this.result);
+        screen_result.setText(str_show);
+        screen_input.setText(this.input);
+        this.solveInput(this.input);
+    }
+
+    //Personalized menu bar
     public boolean onCreateOptionsMenu(Menu menu){
         getMenuInflater().inflate(R.menu.menu, menu);
         return true;
     }
 
+    //Add shared button to menu
     public boolean onOptionsItemSelected(MenuItem menu_item){
         Toast.makeText(this,"Has shared result", Toast.LENGTH_LONG).show();
 
@@ -99,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    //onclick any button, set input, set equal, set memory
     public void onClick(View view) {
         Button button = (Button) view;
         String str_input = button.getText().toString();
@@ -122,19 +140,9 @@ public class MainActivity extends AppCompatActivity {
 
         //recovery memory
         if (str_input.equals("MR")){
-            String str_memory = Double.toString(this.memory);
-            String str_show;
 
-            String [] array_str_memory = str_memory.split("\\.");
-            if (array_str_memory.length > 1){
-                if (Double.parseDouble(array_str_memory[1]) > 0.0){
-                    str_show = str_memory;
-                }else{
-                    str_show = array_str_memory[0];
-                }
-            }else {
-                str_show = array_str_memory[0];
-            }
+            String str_show = this.formatNumberString(this.memory);
+
             if (old_input.equals(old_result)){
                 screen_result.setText(str_show);
                 screen_input.setText(str_show);
@@ -224,12 +232,12 @@ public class MainActivity extends AppCompatActivity {
         this.solveInput(all_input);
     }
 
+    //solve a string e.g. "1+2(5+6)", set result
     private void solveInput(String all_input){
         //Verify error in parenthesis
         Boolean verify_input = this.verifyParentheses(all_input);
         if (verify_input){
 
-            parenthesis_error = false;
             Struct final_struct = this.processParentheses(all_input);
 
             String algo = final_struct.structToString(final_struct);
@@ -237,19 +245,8 @@ public class MainActivity extends AppCompatActivity {
 
             try {
                 this.result = final_struct.calculate(final_struct);
-                String str_result = Double.toString(this.result);
-                String str_show;
 
-                String [] array_str_result = str_result.split("\\.");
-                if (array_str_result.length > 1){
-                    if (Double.parseDouble(array_str_result[1]) > 0.0){
-                        str_show = str_result;
-                    }else{
-                        str_show = array_str_result[0];
-                    }
-                }else {
-                    str_show = array_str_result[0];
-                }
+                String str_show = this.formatNumberString(this.result);
 
                 screen_result.setText(str_show);
 
@@ -275,6 +272,27 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //No show 10.0, -> 10, 10.5 -> 10.5
+    private String formatNumberString(Double number){
+        String str_result = Double.toString(number);
+        String str_show;
+
+        String [] array_str_result = str_result.split("\\.");
+        if (array_str_result.length > 1){
+            if (Double.parseDouble(array_str_result[1]) > 0.0){
+                str_show = str_result;
+            }else{
+                str_show = array_str_result[0];
+            }
+        }else {
+            str_show = array_str_result[0];
+        }
+
+        return str_show;
+    }
+
+    //return boolean if the expression has correct parentheses
+    // (1+2(3-1) -> false, (1+2(3-1))
     private Boolean verifyParentheses(String str_input){
 
         Boolean result = false;
@@ -317,6 +335,11 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
+
+    //**** recursion for build to struct ****/
+
+    //Remove parentheses in sign order and build struct,
+    // 1+2(7-4) -> [add, 1, [product, 2, [diff,7,4]]]
     private Struct processParentheses(String str_input){
         Struct result = new Struct(null, null, null, null, null);
 
@@ -456,374 +479,8 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    private List<String> valid_plus(String str_input){
-        Integer count_open = 0;
-        Integer count_close = 0;
-
-        //split string by character
-        char[] array_str_input = str_input.toCharArray();
-
-        List<Integer> valid_plus_aux = new ArrayList<>();
-        boolean plus_valid = false;
-        for (int i=0; i<array_str_input.length; i++) {
-            String this_char = Character.toString(array_str_input[i]);
-            if (this_char.equals("(")) {
-                count_open++;
-            } else if (this_char.equals(")")) {
-                count_close++;
-            }
-
-            if (count_open == 0) {
-                plus_valid = true;
-                //find a closed parentheses
-            }else if(count_open > count_close){
-                plus_valid = false;
-            }else if (count_open > 0 && count_open.equals(count_close)) {
-                plus_valid = true;
-            }
-
-            if (this_char.equals("+") && plus_valid){
-                valid_plus_aux.add(i);
-                count_open = 0;
-                count_close = 0;
-                plus_valid = false;
-            }
-        }
-
-        List<String> splits = new ArrayList<>();
-        int end_split = 0;
-        for (int j=0; j<valid_plus_aux.size(); j++){
-            //Log.i("List", valid_plus_aux.get(j)+"");
-            splits.add(str_input.substring(end_split,valid_plus_aux.get(j)));
-            end_split = valid_plus_aux.get(j)+1;
-
-            if (j == valid_plus_aux.size()-1 ){
-                splits.add(str_input.substring(end_split));
-            }
-        }
-
-        return splits;
-    }
-
-    private List<String> valid_minus(String str_input){
-        Integer count_open = 0;
-        Integer count_close = 0;
-
-        //split string by character
-        char[] array_str_input = str_input.toCharArray();
-
-        List<Integer> valid_minus = new ArrayList<>();
-        boolean minus_valid = false;
-        for (int i=0; i<array_str_input.length; i++) {
-            String this_char = Character.toString(array_str_input[i]);
-            if (this_char.equals("(")) {
-                count_open++;
-            } else if (this_char.equals(")")) {
-                count_close++;
-            }
-
-            if (count_open == 0) {
-                minus_valid = true;
-                //find a closed parentheses
-            }else if(count_open > count_close){
-                minus_valid = false;
-            }else if (count_open > 0 && count_open.equals(count_close)) {
-                minus_valid = true;
-            }
-
-            if (this_char.equals("-") && minus_valid){
-                valid_minus.add(i);
-                count_open = 0;
-                count_close = 0;
-                minus_valid = false;
-            }
-        }
-
-        List<String> splits = new ArrayList<>();
-        int end_split = 0;
-        for (int j=0; j<valid_minus.size(); j++){
-            //Log.i("List", valid_minus.get(j)+"");
-            splits.add(str_input.substring(end_split,valid_minus.get(j)));
-            end_split = valid_minus.get(j)+1;
-
-            if (j == valid_minus.size()-1 ){
-                splits.add(str_input.substring(end_split));
-            }
-        }
-
-        return splits;
-    }
-
-    private List<String> valid_division(String str_input){
-        Integer count_open = 0;
-        Integer count_close = 0;
-
-        //split string by character
-        char[] array_str_input = str_input.toCharArray();
-
-        List<Integer> valid_division_aux = new ArrayList<>();
-        boolean division_valid = false;
-        for (int i=0; i<array_str_input.length; i++) {
-            String this_char = Character.toString(array_str_input[i]);
-            if (this_char.equals("(")) {
-                count_open++;
-            } else if (this_char.equals(")")) {
-                count_close++;
-            }
-
-            if (count_open == 0) {
-                division_valid = true;
-                //find a closed parentheses
-            }else if(count_open > count_close){
-                division_valid = false;
-            }else if (count_open > 0 && count_open.equals(count_close)) {
-                division_valid = true;
-            }
-
-            if (this_char.equals("÷") && division_valid){
-                valid_division_aux.add(i);
-                count_open = 0;
-                count_close = 0;
-                division_valid = false;
-            }
-        }
-
-        List<String> splits = new ArrayList<>();
-        int end_split = 0;
-        for (int j=0; j<valid_division_aux.size(); j++){
-            //Log.i("List", valid_division_aux.get(j)+"");
-            splits.add(str_input.substring(end_split,valid_division_aux.get(j)));
-            end_split = valid_division_aux.get(j)+1;
-
-            if (j == valid_division_aux.size()-1 ){
-                splits.add(str_input.substring(end_split));
-            }
-        }
-
-        return splits;
-    }
-
-    private List<String> valid_multiplication(String str_input){
-        Integer count_open = 0;
-        Integer count_close = 0;
-        Integer start_open = 0;
-        List<String> splits = new ArrayList<>();
-
-        //If this str_input -> √(
-        if (str_input.length()>=2){
-            if (Character.toString(str_input.charAt(0)).equals("√") && Character.toString(str_input.charAt(1)).equals("(")){
-                return splits;
-            }
-        }
-
-        if (str_input.length()>=3){
-            if (Character.toString(str_input.charAt(0)).equals("(") && Character.toString(str_input.charAt(1)).equals("√") && Character.toString(str_input.charAt(2)).equals("(")){
-                return splits;
-            }
-        }
-
-        //add parentheses to sqrt exp
-        str_input = this.addParenthesesToSqrt(str_input);
-
-        //split string by character
-        char[] array_str_input = str_input.toCharArray();
-
-        List<Integer> valid_multiplication_aux = new ArrayList<>();
-
-        boolean multiplication_valid = false;
-        for (int i=0; i<array_str_input.length; i++) {
-            String this_char = Character.toString(array_str_input[i]);
-            if (this_char.equals("(")) {
-                if (count_open.equals(0)){
-                    start_open = i;
-                }
-                count_open++;
-            } else if (this_char.equals(")")) {
-                count_close++;
-            }
-
-            if (count_open == 0) {
-                multiplication_valid = true;
-                //find a closed parentheses
-            }else if(count_open > count_close){
-                multiplication_valid = false;
-            }else if (count_open > 0 && count_open.equals(count_close)) {
-                valid_multiplication_aux.add(start_open);
-                valid_multiplication_aux.add(i);
-                count_open = 0;
-                count_close = 0;
-                start_open = 0;
-                multiplication_valid = true;
-            }
-
-            if (this_char.equals("x") && multiplication_valid){
-                valid_multiplication_aux.add(i);
-                multiplication_valid = false;
-            }
-        }
-
-
-        int end_split = 0;
-        for (int j=0; j<valid_multiplication_aux.size(); j++){
-
-            splits.add(str_input.substring(end_split,valid_multiplication_aux.get(j)));
-            end_split = valid_multiplication_aux.get(j)+1;
-
-            if (j == valid_multiplication_aux.size()-1 ){
-                splits.add(str_input.substring(end_split));
-            }
-        }
-
-        return splits;
-    }
-
-    private List<String> valid_pow(String str_input){
-        Integer count_open = 0;
-        Integer count_close = 0;
-
-        //split string by character
-        char[] array_str_input = str_input.toCharArray();
-
-        List<Integer> valid_pow_aux = new ArrayList<>();
-        boolean pow_valid = false;
-        for (int i=0; i<array_str_input.length; i++) {
-            String this_char = Character.toString(array_str_input[i]);
-            if (this_char.equals("(")) {
-                count_open++;
-            } else if (this_char.equals(")")) {
-                count_close++;
-            }
-
-            if (count_open == 0) {
-                pow_valid = true;
-                //find a closed parentheses
-            }else if(count_open > count_close){
-                pow_valid = false;
-            }else if (count_open > 0 && count_open.equals(count_close)) {
-                pow_valid = true;
-            }
-
-            if (this_char.equals("^") && pow_valid){
-                valid_pow_aux.add(i);
-                count_open = 0;
-                count_close = 0;
-                pow_valid = false;
-            }
-        }
-
-        List<String> splits = new ArrayList<>();
-        int end_split = 0;
-        for (int j=0; j<valid_pow_aux.size(); j++){
-            //Log.i("List", valid_pow_aux.get(j)+"");
-            splits.add(str_input.substring(end_split,valid_pow_aux.get(j)));
-            end_split = valid_pow_aux.get(j)+1;
-
-            if (j == valid_pow_aux.size()-1 ){
-                splits.add(str_input.substring(end_split));
-            }
-        }
-
-        return splits;
-    }
-
-    private List<String> valid_sqrt(String str_input){
-
-        //split string by character
-        char[] array_str_input = str_input.toCharArray();
-
-        List<Integer> valid_sqrt_aux = new ArrayList<>();
-        for (int i=0; i<array_str_input.length; i++) {
-            String this_char = Character.toString(array_str_input[i]);
-            if (this_char.equals("√")){
-                valid_sqrt_aux.add(i);
-            }
-        }
-
-        List<String> splits = new ArrayList<>();
-        int end_split = 0;
-        for (int j=0; j<valid_sqrt_aux.size(); j++){
-            splits.add(str_input.substring(end_split,valid_sqrt_aux.get(j)));
-            end_split = valid_sqrt_aux.get(j)+1;
-
-            if (j == valid_sqrt_aux.size()-1 ){
-                splits.add(str_input.substring(end_split));
-            }
-        }
-
-        return splits;
-    }
-
-    private String addParenthesesToSqrt(String str_input){
-        Integer count_open = 0;
-        Integer count_close = 0;
-        Integer start_open = 0;
-
-        //split string by character
-        char[] array_str_input = str_input.toCharArray();
-
-        String result = str_input;
-
-        for (int i=0; i<array_str_input.length; i++) {
-            String this_char = Character.toString(array_str_input[i]);
-            if (this_char.equals("(")) {
-                if (count_open.equals(0)){
-                    start_open = i;
-                }
-                count_open++;
-            } else if (this_char.equals(")")) {
-                count_close++;
-            }
-
-            if (count_open > 0 && count_open.equals(count_close)) {
-
-                if (start_open-1 >=0){
-                    if (Character.toString(array_str_input[start_open-1]).equals("√")){
-                        String aux = str_input.substring(0,start_open-1)+"("+str_input.substring(start_open-1,i+1)+")";
-                        if (i < array_str_input.length){
-                            result = aux + this.addParenthesesToSqrt(str_input.substring(i+1));
-                        }else{
-                            result = aux;
-                        }
-                        break;
-                    }
-                }
-                count_open = 0;
-                count_close = 0;
-                start_open = 0;
-
-            }
-        }
-        return result;
-    }
-
-    private String getSign(String sign){
-        String result;
-
-        switch (sign){
-            case "+":
-                result = "add";
-                break;
-            case "-":
-                result = "diff";
-                break;
-            case "÷":
-                result = "quotient";
-                break;
-            default:
-                result = "product";
-                break;
-            case "√":
-                result = "sqrt";
-                break;
-            case "^":
-                result = "pow";
-                break;
-        }
-
-        return result;
-
-    }
-
+    //build struct for strings without parenthesis
+    // 1+2+3 -> [add, 1, [add, 2, 3]]
     private Struct processString(String all_string){
         //string process in sign order
         String sign;
@@ -987,6 +644,382 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return result;
+    }
+
+    //return array with split by +, 2x3 + 5 -> [2x3, 5]
+    private List<String> valid_plus(String str_input){
+        Integer count_open = 0;
+        Integer count_close = 0;
+
+        //split string by character
+        char[] array_str_input = str_input.toCharArray();
+
+        List<Integer> valid_plus_aux = new ArrayList<>();
+        boolean plus_valid = false;
+        for (int i=0; i<array_str_input.length; i++) {
+            String this_char = Character.toString(array_str_input[i]);
+            if (this_char.equals("(")) {
+                count_open++;
+            } else if (this_char.equals(")")) {
+                count_close++;
+            }
+
+            if (count_open == 0) {
+                plus_valid = true;
+                //find a closed parentheses
+            }else if(count_open > count_close){
+                plus_valid = false;
+            }else if (count_open > 0 && count_open.equals(count_close)) {
+                plus_valid = true;
+            }
+
+            if (this_char.equals("+") && plus_valid){
+                valid_plus_aux.add(i);
+                count_open = 0;
+                count_close = 0;
+                plus_valid = false;
+            }
+        }
+
+        List<String> splits = new ArrayList<>();
+        int end_split = 0;
+        for (int j=0; j<valid_plus_aux.size(); j++){
+            //Log.i("List", valid_plus_aux.get(j)+"");
+            splits.add(str_input.substring(end_split,valid_plus_aux.get(j)));
+            end_split = valid_plus_aux.get(j)+1;
+
+            if (j == valid_plus_aux.size()-1 ){
+                splits.add(str_input.substring(end_split));
+            }
+        }
+
+        return splits;
+    }
+
+    //return array with split by -, 2x3 - 5 -> [2x3, 5]
+    private List<String> valid_minus(String str_input){
+        Integer count_open = 0;
+        Integer count_close = 0;
+
+        //split string by character
+        char[] array_str_input = str_input.toCharArray();
+
+        List<Integer> valid_minus = new ArrayList<>();
+        boolean minus_valid = false;
+        for (int i=0; i<array_str_input.length; i++) {
+            String this_char = Character.toString(array_str_input[i]);
+            if (this_char.equals("(")) {
+                count_open++;
+            } else if (this_char.equals(")")) {
+                count_close++;
+            }
+
+            if (count_open == 0) {
+                minus_valid = true;
+                //find a closed parentheses
+            }else if(count_open > count_close){
+                minus_valid = false;
+            }else if (count_open > 0 && count_open.equals(count_close)) {
+                minus_valid = true;
+            }
+
+            if (this_char.equals("-") && minus_valid){
+                valid_minus.add(i);
+                count_open = 0;
+                count_close = 0;
+                minus_valid = false;
+            }
+        }
+
+        List<String> splits = new ArrayList<>();
+        int end_split = 0;
+        for (int j=0; j<valid_minus.size(); j++){
+            //Log.i("List", valid_minus.get(j)+"");
+            splits.add(str_input.substring(end_split,valid_minus.get(j)));
+            end_split = valid_minus.get(j)+1;
+
+            if (j == valid_minus.size()-1 ){
+                splits.add(str_input.substring(end_split));
+            }
+        }
+
+        return splits;
+    }
+
+    //return array with split by ÷, 2x3 ÷ 5 -> [2x3, 5]
+    private List<String> valid_division(String str_input){
+        Integer count_open = 0;
+        Integer count_close = 0;
+
+        //split string by character
+        char[] array_str_input = str_input.toCharArray();
+
+        List<Integer> valid_division_aux = new ArrayList<>();
+        boolean division_valid = false;
+        for (int i=0; i<array_str_input.length; i++) {
+            String this_char = Character.toString(array_str_input[i]);
+            if (this_char.equals("(")) {
+                count_open++;
+            } else if (this_char.equals(")")) {
+                count_close++;
+            }
+
+            if (count_open == 0) {
+                division_valid = true;
+                //find a closed parentheses
+            }else if(count_open > count_close){
+                division_valid = false;
+            }else if (count_open > 0 && count_open.equals(count_close)) {
+                division_valid = true;
+            }
+
+            if (this_char.equals("÷") && division_valid){
+                valid_division_aux.add(i);
+                count_open = 0;
+                count_close = 0;
+                division_valid = false;
+            }
+        }
+
+        List<String> splits = new ArrayList<>();
+        int end_split = 0;
+        for (int j=0; j<valid_division_aux.size(); j++){
+            //Log.i("List", valid_division_aux.get(j)+"");
+            splits.add(str_input.substring(end_split,valid_division_aux.get(j)));
+            end_split = valid_division_aux.get(j)+1;
+
+            if (j == valid_division_aux.size()-1 ){
+                splits.add(str_input.substring(end_split));
+            }
+        }
+
+        return splits;
+    }
+
+    //return array with split by x, 2 x 3 x 5 -> [2, 3, 5]
+    private List<String> valid_multiplication(String str_input){
+        Integer count_open = 0;
+        Integer count_close = 0;
+        Integer start_open = 0;
+        List<String> splits = new ArrayList<>();
+
+        //If this str_input -> √(
+        if (str_input.length()>=2){
+            if (Character.toString(str_input.charAt(0)).equals("√") && Character.toString(str_input.charAt(1)).equals("(")){
+                return splits;
+            }
+        }
+
+        if (str_input.length()>=3){
+            if (Character.toString(str_input.charAt(0)).equals("(") && Character.toString(str_input.charAt(1)).equals("√") && Character.toString(str_input.charAt(2)).equals("(")){
+                return splits;
+            }
+        }
+
+        //add parentheses to sqrt exp
+        str_input = this.addParenthesesToSqrt(str_input);
+
+        //split string by character
+        char[] array_str_input = str_input.toCharArray();
+
+        List<Integer> valid_multiplication_aux = new ArrayList<>();
+
+        boolean multiplication_valid = false;
+        for (int i=0; i<array_str_input.length; i++) {
+            String this_char = Character.toString(array_str_input[i]);
+            if (this_char.equals("(")) {
+                if (count_open.equals(0)){
+                    start_open = i;
+                }
+                count_open++;
+            } else if (this_char.equals(")")) {
+                count_close++;
+            }
+
+            if (count_open == 0) {
+                multiplication_valid = true;
+                //find a closed parentheses
+            }else if(count_open > count_close){
+                multiplication_valid = false;
+            }else if (count_open > 0 && count_open.equals(count_close)) {
+                valid_multiplication_aux.add(start_open);
+                valid_multiplication_aux.add(i);
+                count_open = 0;
+                count_close = 0;
+                start_open = 0;
+                multiplication_valid = true;
+            }
+
+            if (this_char.equals("x") && multiplication_valid){
+                valid_multiplication_aux.add(i);
+                multiplication_valid = false;
+            }
+        }
+
+
+        int end_split = 0;
+        for (int j=0; j<valid_multiplication_aux.size(); j++){
+
+            splits.add(str_input.substring(end_split,valid_multiplication_aux.get(j)));
+            end_split = valid_multiplication_aux.get(j)+1;
+
+            if (j == valid_multiplication_aux.size()-1 ){
+                splits.add(str_input.substring(end_split));
+            }
+        }
+
+        return splits;
+    }
+
+    //return array with split by ^, 2 ^ 3 -> [2, 3]
+    private List<String> valid_pow(String str_input){
+        Integer count_open = 0;
+        Integer count_close = 0;
+
+        //split string by character
+        char[] array_str_input = str_input.toCharArray();
+
+        List<Integer> valid_pow_aux = new ArrayList<>();
+        boolean pow_valid = false;
+        for (int i=0; i<array_str_input.length; i++) {
+            String this_char = Character.toString(array_str_input[i]);
+            if (this_char.equals("(")) {
+                count_open++;
+            } else if (this_char.equals(")")) {
+                count_close++;
+            }
+
+            if (count_open == 0) {
+                pow_valid = true;
+                //find a closed parentheses
+            }else if(count_open > count_close){
+                pow_valid = false;
+            }else if (count_open > 0 && count_open.equals(count_close)) {
+                pow_valid = true;
+            }
+
+            if (this_char.equals("^") && pow_valid){
+                valid_pow_aux.add(i);
+                count_open = 0;
+                count_close = 0;
+                pow_valid = false;
+            }
+        }
+
+        List<String> splits = new ArrayList<>();
+        int end_split = 0;
+        for (int j=0; j<valid_pow_aux.size(); j++){
+            //Log.i("List", valid_pow_aux.get(j)+"");
+            splits.add(str_input.substring(end_split,valid_pow_aux.get(j)));
+            end_split = valid_pow_aux.get(j)+1;
+
+            if (j == valid_pow_aux.size()-1 ){
+                splits.add(str_input.substring(end_split));
+            }
+        }
+
+        return splits;
+    }
+
+    //return array with split by √, 2√3 -> [2, 3]
+    private List<String> valid_sqrt(String str_input){
+
+        //split string by character
+        char[] array_str_input = str_input.toCharArray();
+
+        List<Integer> valid_sqrt_aux = new ArrayList<>();
+        for (int i=0; i<array_str_input.length; i++) {
+            String this_char = Character.toString(array_str_input[i]);
+            if (this_char.equals("√")){
+                valid_sqrt_aux.add(i);
+            }
+        }
+
+        List<String> splits = new ArrayList<>();
+        int end_split = 0;
+        for (int j=0; j<valid_sqrt_aux.size(); j++){
+            splits.add(str_input.substring(end_split,valid_sqrt_aux.get(j)));
+            end_split = valid_sqrt_aux.get(j)+1;
+
+            if (j == valid_sqrt_aux.size()-1 ){
+                splits.add(str_input.substring(end_split));
+            }
+        }
+
+        return splits;
+    }
+
+    //return string 2√3 -> (2√3)
+    private String addParenthesesToSqrt(String str_input){
+        Integer count_open = 0;
+        Integer count_close = 0;
+        Integer start_open = 0;
+
+        //split string by character
+        char[] array_str_input = str_input.toCharArray();
+
+        String result = str_input;
+
+        for (int i=0; i<array_str_input.length; i++) {
+            String this_char = Character.toString(array_str_input[i]);
+            if (this_char.equals("(")) {
+                if (count_open.equals(0)){
+                    start_open = i;
+                }
+                count_open++;
+            } else if (this_char.equals(")")) {
+                count_close++;
+            }
+
+            if (count_open > 0 && count_open.equals(count_close)) {
+
+                if (start_open-1 >=0){
+                    if (Character.toString(array_str_input[start_open-1]).equals("√")){
+                        String aux = str_input.substring(0,start_open-1)+"("+str_input.substring(start_open-1,i+1)+")";
+                        if (i < array_str_input.length){
+                            result = aux + this.addParenthesesToSqrt(str_input.substring(i+1));
+                        }else{
+                            result = aux;
+                        }
+                        break;
+                    }
+                }
+                count_open = 0;
+                count_close = 0;
+                start_open = 0;
+
+            }
+        }
+        return result;
+    }
+
+    //return string + -> add, - -> diff ..
+    private String getSign(String sign){
+        String result;
+
+        switch (sign){
+            case "+":
+                result = "add";
+                break;
+            case "-":
+                result = "diff";
+                break;
+            case "÷":
+                result = "quotient";
+                break;
+            default:
+                result = "product";
+                break;
+            case "√":
+                result = "sqrt";
+                break;
+            case "^":
+                result = "pow";
+                break;
+        }
+
+        return result;
+
     }
 
 }
